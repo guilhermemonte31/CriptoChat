@@ -1,0 +1,11 @@
+.message-container {
+    flex: 1;
+    padding: 1rem;
+    overflow-y: auto;
+    background-color: #f9fafb;
+}
+
+.message-list {
+    max-width: 48rem;
+    margin: 0 auto;
+}
