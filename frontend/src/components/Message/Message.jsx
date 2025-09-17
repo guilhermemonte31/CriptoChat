@@ -1,17 +1,20 @@
 import React from 'react'
 import './Message.css'
 
-const Message = ({ message, isOwn }) => {
+const Message = ({ message, isOwn, className }) => {
   return (
-      <div className={`message-wrapper ${isOwn ? 'message-own' : ''}`}>
-          <div className="message-content">
-              <span className="message-info">
-                {message.from} • {new Date(message.id).toLocaleTimeString()}
-              </span>
-              <div className={`message-bubble ${isOwn ? 'message-bubble-own' : ''}`}>
-                  {message.text}
-              </div>
-          </div>
+    <div className={`message-wrapper ${className}`}>
+      <div className={`message ${isOwn ? 'message-own' : 'message-other'}`}>
+        <div className="message-info">
+          <span className="message-sender">{message.from}</span>
+          <span className="message-time">
+            {new Date(message.id).toLocaleTimeString()}
+          </span>
+        </div>
+        <div className="message-content">
+          {message.text}
+        </div>
+      </div>
     </div>
   )
 }

@@ -53,7 +53,7 @@ function App() {
     <div className="app-layout">
        <div className="app-container">
           <Header username={username} />
-          <MessageList messages={messages} />
+          <MessageList messages={messages} username={username} />
           <ChatInput
             input={input}
             setInput={setInput}
