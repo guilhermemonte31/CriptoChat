@@ -14,15 +14,42 @@ function App() {
   const [input, setInput] = useState("");
   const [username, setUsername] = useState("");
   const [isTyping, setIsTyping] = useState(false)
-  const [onlineUsers, setOnlineUsers] = useState([username])
+  const [onlineUsers, setOnlineUsers] = useState([]);
+  const [typingUsers, setTypingUsers] = useState([]);
 
   useEffect(() => {
     socket.on("receive_message", (msg) => {
       setMessages((prev) => [...prev, msg]);
     });
 
+    socket.on("users_update", (users) => {
+      setOnlineUsers(users);
+    });
+
+    socket.on("user_joined", (name) => {
+      console.log(`${name} entrou no chat`);
+    });
+
+    socket.on("user_left", (name) => {
+      console.log(`${name} saiu do chat`);
+    });
+
+    socket.on("user_typing", ({ username: user, isTyping }) => {
+      setTypingUsers((prev) => {
+        if (isTyping) {
+          return prev.includes(user) ? prev : [...prev, user];
+        } else {
+          return prev.filter((u) => u !== user);
+        }
+      });
+    });
+
     return () => {
       socket.off("receive_message");
+      socket.off("users_update");
+      socket.off("user_joined");
+      socket.off("user_left");
+      socket.off("user_typing");
     };
   }, []);
 
@@ -35,15 +62,23 @@ function App() {
     if (input.trim() === "") return;
 
     const newMsg = {
-      id: Date.now(),
-      from: username,
+      user: username,
       text: input,
+      timestamp: new Date().toISOString(),
+      id: crypto.randomUUID(),
     };
 
     setMessages((prev) => [...prev, newMsg]);
     socket.emit("send_message", newMsg);
     setInput("");
+    setIsTyping(false);
   };
+
+  useEffect(() => {
+    if (username) {
+      socket.emit("typing", isTyping);
+    }
+  }, [isTyping, username]);
 
   if (!username) {
     return <LoginModal onLogin={handleLogin} />
@@ -51,15 +86,15 @@ function App() {
 
   return (
     <div className="app-layout">
-       <div className="app-container">
-          <Header username={username} />
-          <MessageList messages={messages} />
-          <ChatInput
-            input={input}
-            setInput={setInput}
-            handleSend={handleSend}
-            isTyping={isTyping}
-          />
+      <div className="app-container">
+        <Header username={username} />
+        <MessageList messages={messages} typingUsers={typingUsers} />
+        <ChatInput
+          input={input}
+          setInput={setInput}
+          handleSend={handleSend}
+          isTyping={setIsTyping}
+        />
       </div>
       <Sidebar
         username={username}

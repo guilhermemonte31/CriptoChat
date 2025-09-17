@@ -1,68 +1,49 @@
 import express from "express";
-import { Server } from "socket.io";
 import http from "http";
+import cors from "cors";
+import dotenv from "dotenv";
+import mongoose from "mongoose";
+import { Server } from "socket.io";
+import socketHandler from "./socket.js";
+import messagesRoutes from "./routes/messages.js";
+
+dotenv.config();
 
 const app = express();
-const server = http.createServer(app);
 
+app.use(cors({ origin: process.env.FRONTEND_URL || "http://localhost:5173" }));
+app.use(express.json());
+
+// API REST para mensagens (busca / paginação / criar)
+app.use("/messages", messagesRoutes);
+
+app.get("/", (req, res) => res.send("Servidor CriptoChat com MongoDB e Socket.IO"));
+
+const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173", // URL do frontend Vite
+    origin: process.env.FRONTEND_URL || "http://localhost:5173",
     methods: ["GET", "POST"]
-  },
+  }
 });
 
-// Função auxiliar para obter usuários online
-const getOnlineUsers = () => {
-  return Array.from(io.sockets.sockets.values())
-    .filter(socket => socket.username)
-    .map(socket => socket.username);
-};
+socketHandler(io);
 
-io.on("connection", (socket) => {
-  console.log(`Usuário conectado: ${socket.id}`);
+const PORT = process.env.PORT || 3001;
 
-  // Evento de entrada do usuário
-  socket.on("user_join", (username) => {
-    socket.username = username;
-    const users = getOnlineUsers();
-    io.emit("users_update", users);
-    
-    // Notifica outros usuários
-    socket.broadcast.emit("user_joined", username);
+// Conectando ao MongoDB antes de subir o servidor
+mongoose
+  .connect(process.env.MONGODB_URI)
+  .then(() => {
+    console.log("Conectado ao MongoDB");
+    server.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
+  })
+  .catch((err) => {
+    console.error("Erro ao conectar no MongoDB:", err);
+    process.exit(1);
   });
 
-  // Evento de mensagem
-  socket.on("send_message", (message) => {
-    socket.broadcast.emit("receive_message", message);
-  });
-
-  // Evento de desconexão
-  socket.on("disconnect", () => {
-    if (socket.username) {
-      console.log(`Usuário desconectado: ${socket.username}`);
-      const users = getOnlineUsers();
-      io.emit("users_update", users);
-      socket.broadcast.emit("user_left", socket.username);
-    }
-  });
-
-  // Evento de digitação
-  socket.on("typing", (isTyping) => {
-    socket.broadcast.emit("user_typing", {
-      username: socket.username,
-      isTyping
-    });
-  });
-});
-
-// Rota básica para verificar se o servidor está rodando
+// Rota de teste
 app.get("/", (req, res) => {
   res.send("Servidor CriptoChat está rodando!");
-});
-
-// Inicialização do servidor
-const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
 });
