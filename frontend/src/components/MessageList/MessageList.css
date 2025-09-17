@@ -21,17 +21,19 @@
 }
 
 .own-message {
-    justify-content: flex-end !important;
+    justify-content: flex-end;
 }
 
 .other-message {
-    justify-content: flex-start !important;
+    justify-content: flex-start;
 }
 
 .own-message .message {
-    margin-left: auto !important;
+    margin-left: auto;
+    margin-right: 0;
 }
 
 .other-message .message {
-    margin-right: auto !important;
+    margin-right: auto;
+    margin-left: 0;
 }
