@@ -73,7 +73,7 @@ const LoginModal = ({ onLogin }) => {
             console.log('Chave pública:', publicKeyPem);
             
             
-            onLogin(inputName, publicKeyPem);
+            onLogin(inputName, publicKeyPem, keyPair.privateKey);
         } catch (err) {
             setError('Erro ao gerar chaves');
         }
