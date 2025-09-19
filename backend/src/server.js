@@ -4,6 +4,7 @@ import http from "http";
 
 const app = express();
 const server = http.createServer(app);
+const publicKeys = {};
 
 const io = new Server(server, {
   cors: {
@@ -26,23 +27,30 @@ io.on("connection", (socket) => {
   socket.on("user_join", (username) => {
     socket.username = username;
     const users = getOnlineUsers();
-    io.emit("users_update", users);
+    io.emit("users_update", {users, publicKeys});
     
     // Notifica outros usuários
     socket.broadcast.emit("user_joined", username);
   });
 
+  socket.on("public_key", ({username, publicKey}) => {
+    publicKeys[username] = publicKey;
+    io.emit("users_update", {users: getOnlineUsers(), publicKeys});
+  });
+
   // Evento de mensagem
   socket.on("send_message", (message) => {
+    console.log(message);
     socket.broadcast.emit("receive_message", message);
   });
 
   // Evento de desconexão
   socket.on("disconnect", () => {
     if (socket.username) {
+      delete publicKeys[socket.username];
       console.log(`Usuário desconectado: ${socket.username}`);
       const users = getOnlineUsers();
-      io.emit("users_update", users);
+      io.emit("users_update", {users, publicKeys});
       socket.broadcast.emit("user_left", socket.username);
     }
   });

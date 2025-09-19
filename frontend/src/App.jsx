@@ -26,9 +26,10 @@ function App() {
     };
   }, []);
 
-  const handleLogin = (name) => {
+  const handleLogin = (name, publicKeyPem) => {
     setUsername(name)
-    socket.emit("user_join", name)
+    socket.emit("user_join", name);
+    socket.emit("public_key", {username: name, publicKey: publicKeyPem});
   }
 
   const handleSend = () => {
