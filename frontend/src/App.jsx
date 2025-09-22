@@ -15,24 +15,45 @@ function App() {
   const [username, setUsername] = useState("");
   const [isTyping, setIsTyping] = useState(false)
   const [onlineUsers, setOnlineUsers] = useState([username])
+  const [privateKey, setPrivateKey] = useState(null);
+
+  // useEffect(() => {
+  //   //é pra receber msg criptografada aqui
+  //   socket.on("receive_message", (msg) => {
+  //     setMessages((prev) => [...prev, msg]);
+  //   });
+
+  //   return () => {
+  //     socket.off("receive_message");
+  //   };
+  // }, []);
+  async function decryptMessage(privateKey, encryptedBase64) {
+  const encrypted = Uint8Array.from(atob(encryptedBase64), c => c.charCodeAt(0));
+  const decrypted = await window.crypto.subtle.decrypt(
+    { name: "RSA-OAEP" },
+    privateKey,
+    encrypted
+  );
+  return new TextDecoder().decode(decrypted);
+}
 
   useEffect(() => {
-    socket.on("receive_message", (msg) => {
-      setMessages((prev) => [...prev, msg]);
-    });
+  socket.on("receive_encrypted_message", async ({ from, encryptedMessage }) => {
+    if (!privateKey) return;
+    const decrypted = await decryptMessage(privateKey, encryptedMessage);
+    setMessages((prev) => [...prev, { from, text: decrypted }]);
+  });
 
-    return () => {
-      socket.off("receive_message");
-    };
-  }, []);
+  return () => {
+    socket.off("receive_encrypted_message");
+  };
+}, [privateKey]);
 
-  const handleLogin = (name) => {
-    setUsername(name)
-    socket.emit("user_join", name)
-  }
+
 
   const handleSend = () => {
     if (input.trim() === "") return;
+    //tratar o input para enviar criptografdo com a public key do destinatario
 
     const newMsg = {
       id: Date.now(),
@@ -41,6 +62,7 @@ function App() {
     };
 
     setMessages((prev) => [...prev, newMsg]);
+    //enviar a versao criptografada
     socket.emit("send_message", newMsg);
     setInput("");
   };
