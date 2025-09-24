@@ -64,11 +64,9 @@ function App() {
     const newMsg = {
       user: username,
       text: input,
-      timestamp: new Date().toISOString(),
       id: crypto.randomUUID(),
     };
 
-    setMessages((prev) => [...prev, newMsg]);
     socket.emit("send_message", newMsg);
     setInput("");
     setIsTyping(false);
@@ -93,7 +91,7 @@ function App() {
           input={input}
           setInput={setInput}
           handleSend={handleSend}
-          isTyping={setIsTyping}
+          setIsTyping={setIsTyping}
         />
       </div>
       <Sidebar

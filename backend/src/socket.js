@@ -35,7 +35,13 @@ export default function socketHandler(io) {
                 await message.save();
 
                 // emite a mensagem para todos na sala (inclui remetente)
-                io.emit("receive_message", message);
+                io.emit("receive_message", {
+                    id: message._id.toString(),
+                    user: message.user,
+                    text: message.text,
+                    room: message.room,
+                    timestamp: message.createdAt.toISOString()
+                });
             } catch (err) {
                 console.error("Erro ao salvar mensagem:", err);
                 socket.emit("error", { message: "Não foi possível salvar a mensagem" });
